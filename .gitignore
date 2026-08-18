@@ -42,3 +42,9 @@ yarn-error.*
 
 # Expo export output
 .expo-export/
+
+# Web build output
+dist/
+.vercel/
+
+.vercel
