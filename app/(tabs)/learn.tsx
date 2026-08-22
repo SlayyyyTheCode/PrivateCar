@@ -45,8 +45,8 @@ export default function LearnScreen() {
       <Card>
         <Text style={[font.heading, { color: p.text }]}>Additional Registration Fee</Text>
         <Text style={[font.caption, { color: p.textMuted }]}>
-          Charged on Open Market Value in marginal bands — only the slice of OMV inside each band pays that
-          band's rate.
+          Charged on Open Market Value in marginal bands — only the slice of OMV inside a band is taxed at
+          that rate.
         </Text>
         {ARF_TIERS.map((tier) => (
           <Row
