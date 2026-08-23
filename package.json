@@ -42,7 +42,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "car:preview": "node scripts/preview-car-profile.mjs"
   },
   "private": true
 }

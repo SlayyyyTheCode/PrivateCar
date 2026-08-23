@@ -48,3 +48,6 @@ dist/
 .vercel/
 
 .vercel
+
+# Car profile preview render
+car-profile-preview.png
