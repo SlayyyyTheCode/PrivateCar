@@ -53,9 +53,17 @@ describe('evaluateScenario — the headline case', () => {
     expect(result.tdsr.ratio).toBeCloseTo(2_059.2 / 8_000, 4);
   });
 
-  it('states the income actually required', () => {
-    expect(result.requiredGrossMonthlyIncome).toBeCloseTo(result.totalMonthlyCarCost / 0.15, 2);
-    expect(result.requiredGrossMonthlyIncome).toBeGreaterThan(19_000);
+  it('states the income needed to reach each better band', () => {
+    expect(result.requiredGrossMonthlyIncome).toBeCloseTo(result.totalMonthlyCarCost / 0.2, 2);
+    expect(result.comfortableGrossMonthlyIncome).toBeCloseTo(result.totalMonthlyCarCost / 0.1, 2);
+    expect(result.requiredGrossMonthlyIncome).toBeGreaterThan(15_000);
+  });
+
+  it('agrees with the headline band, which is the whole point of sharing one scale', () => {
+    const incomeLeg = result.rules.find((r) => r.id === 'rule-oyc')!.legs.find((l) => l.id === 'income')!;
+    expect(result.band.id).toBe('tooExpensive');
+    expect(incomeLeg.pass).toBe(false);
+    expect(incomeLeg.note).toContain(result.band.label);
   });
 
   it('reports an overall FAIL', () => {
@@ -88,15 +96,29 @@ describe('evaluateScenario — a genuinely affordable case', () => {
     expect(result.status).toBe('PASS');
   });
 
-  it('reports STRETCH between 15% and 20% of gross income', () => {
+  it('calls 10-20% of income Affordable, and passes', () => {
     const s = baseScenario();
     const result = evaluateScenario({
       ...s,
       income: { ...s.income, grossMonthlyIncome: 17_500 },
       loan: { ...s.loan, tenureYears: 4 },
     });
-    expect(result.shareOfGrossIncome).toBeGreaterThan(0.15);
+    expect(result.shareOfGrossIncome).toBeGreaterThan(0.1);
     expect(result.shareOfGrossIncome).toBeLessThan(0.2);
+    expect(result.band.id).toBe('affordable');
+    expect(result.status).toBe('PASS');
+  });
+
+  it('reports STRETCH once the car is barely affordable, at 20-30% of income', () => {
+    const s = baseScenario();
+    const result = evaluateScenario({
+      ...s,
+      income: { ...s.income, grossMonthlyIncome: 12_000 },
+      loan: { ...s.loan, tenureYears: 4 },
+    });
+    expect(result.shareOfGrossIncome).toBeGreaterThan(0.2);
+    expect(result.shareOfGrossIncome).toBeLessThan(0.3);
+    expect(result.band.id).toBe('barely');
     expect(result.status).toBe('STRETCH');
   });
 });

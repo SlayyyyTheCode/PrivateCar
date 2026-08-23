@@ -174,12 +174,12 @@ export const RULE_20_4_10 = {
  */
 export const RULE_OYC = {
   maxTenureYears: 5,
-  /** At or below this share of gross monthly income: comfortable. */
-  comfortableShareOfGrossIncome: 0.15,
-  /** Between comfortable and this: tight but survivable. */
-  stretchShareOfGrossIncome: 0.2,
   /** Months of running costs to hold as a buffer before buying. */
   cashBufferMonths: 3,
+  // The income dimension deliberately lives in src/core/bands.ts rather than
+  // here. It is the number the app puts on screen everywhere, and holding two
+  // copies of it produced a build where the verdict tab and the landing page
+  // disagreed about the same car.
 };
 
 // ---------------------------------------------------------------------------

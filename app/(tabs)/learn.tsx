@@ -123,7 +123,7 @@ export default function LearnScreen() {
 
       <Explainer
         title="The OYC rule"
-        body="Put down what the law requires — 30% if OMV is $20,000 or under, 40% above. Keep the loan to five years or fewer, because flat interest makes every extra year cost the same again. Keep all-in car costs under 15% of gross monthly income; 15–20% is a stretch, and above 20% something else in your life is quietly paying for the car."
+        body="Put down what the law requires — 30% if OMV is $20,000 or under, 40% above. Keep the loan to five years or fewer, because flat interest makes every extra year cost the same again. Then judge the total against your gross monthly income: under 10% is comfortable, under 20% is affordable, under 30% is barely affordable, and at 30% or more something else in your life is quietly paying for the car."
       />
 
       <Card>

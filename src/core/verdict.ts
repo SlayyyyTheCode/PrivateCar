@@ -1,5 +1,5 @@
 import { REGISTRATION_FEE, RULE_20_4_10, RULE_OYC, TDSR_CAP } from '../data/sg-2026-08';
-import { classifyBand, type BandResult } from './bands';
+import { bandById, classifyBand, incomeNeededForBand, type BandResult } from './bands';
 import { annualGrossIncome, incomeAfterCpf } from './cpf';
 import { computeLoan, minDownPaymentPct, type LoanResult } from './loan';
 import { resolveCarPrice } from './price';
@@ -34,8 +34,10 @@ export interface VerdictResult {
   rules: RuleResult[];
   tdsr: TdsrResult;
   upfront: UpfrontCashResult;
-  /** Gross monthly income needed to clear the OYC 15% threshold. */
+  /** Gross monthly income that would make this car Affordable (under 20%). */
   requiredGrossMonthlyIncome: number;
+  /** Gross monthly income that would make it Comfortable (under 10%). */
+  comfortableGrossMonthlyIncome: number;
   /** Positive means the car fits inside the budget the user set. */
   budgetDelta: number;
   status: AffordabilityStatus;
@@ -112,9 +114,10 @@ function evaluate20410(
 /**
  * The Singapore-adapted rule OYC recommends.
  *
- * Down payment is the regulatory floor rather than a target, tenure is
- * tightened to 5 years because of flat-rate interest, and the income share is
- * raised to 15% (with 15-20% treated as a stretch) to match local guidance.
+ * Down payment is the regulatory floor rather than a target, and tenure is
+ * tightened to 5 years because of flat-rate interest. The income leg reads
+ * straight off the band scale in bands.ts so this rule and the headline verdict
+ * can never disagree about the same car.
  */
 function evaluateOyc(
   scenario: Scenario,
@@ -127,8 +130,12 @@ function evaluateOyc(
 
   const downPass = scenario.loan.downPaymentPct >= legalMinDown - 1e-9;
   const tenurePass = scenario.loan.tenureYears <= RULE_OYC.maxTenureYears;
-  const incomePass = share <= RULE_OYC.comfortableShareOfGrossIncome;
-  const incomeStretch = share <= RULE_OYC.stretchShareOfGrossIncome;
+
+  const band = classifyBand(share);
+  // Affordable or better clears the leg; barely affordable is the stretch.
+  const incomePass = band.id === 'comfortable' || band.id === 'affordable';
+  const incomeStretch = incomePass || band.id === 'barely';
+  const affordableCeiling = bandById('affordable').maxShare ?? 0.2;
 
   const legs: RuleLeg[] = [
     {
@@ -154,17 +161,16 @@ function evaluateOyc(
     },
     {
       id: 'income',
-      label: '15% of gross monthly income',
-      target: `${money(grossMonthly * RULE_OYC.comfortableShareOfGrossIncome)} per month`,
+      label: `${pct(affordableCeiling)} of gross monthly income`,
+      target: `${money(grossMonthly * affordableCeiling)} per month`,
       actual: `${money(totalMonthlyCarCost)} (${Number.isFinite(share) ? pct(share) : '—'})`,
       pass: incomePass,
       note: incomePass
-        ? 'All-in car costs sit inside a comfortable share of your income.'
+        ? `${band.label} — ${band.blurb}`
         : incomeStretch
-          ? 'Between 15% and 20% — doable, but it will squeeze savings and holidays.'
-          : `Above 20% of gross income. You would need ` +
-            `${money(totalMonthlyCarCost / RULE_OYC.comfortableShareOfGrossIncome)} gross a month ` +
-            'for this car to be comfortable.',
+          ? `${band.label}. Doable, but savings and holidays are what pay for it.`
+          : `${band.label}. You would need ${money(totalMonthlyCarCost / affordableCeiling)} gross a month ` +
+            'for this car to be affordable.',
     },
   ];
 
@@ -249,7 +255,8 @@ export function evaluateScenario(scenario: Scenario): VerdictResult {
         : 'Your total monthly debt exceeds 55% of gross income. Lenders are required to decline this.',
     },
     upfront: computeUpfront(price, loan, running, scenario),
-    requiredGrossMonthlyIncome: totalMonthlyCarCost / RULE_OYC.comfortableShareOfGrossIncome,
+    requiredGrossMonthlyIncome: incomeNeededForBand(totalMonthlyCarCost, 'affordable') ?? Infinity,
+    comfortableGrossMonthlyIncome: incomeNeededForBand(totalMonthlyCarCost, 'comfortable') ?? Infinity,
     budgetDelta: scenario.running.monthlyBudget - totalMonthlyCarCost,
     status,
   };

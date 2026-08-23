@@ -35,7 +35,10 @@ export default function VerdictScreen() {
       <ScreenTitle title="Verdict" subtitle={scenario.name} />
 
       <Card style={{ backgroundColor: c.bg, borderColor: c.bg }}>
-        <Text style={[font.title, { color: c.fg }]}>{HEADLINE[result.status]}</Text>
+        <Text style={{ color: c.fg, fontSize: 30, fontWeight: '800', letterSpacing: -0.8 }}>
+          {result.band.label}
+        </Text>
+        <Text style={[font.body, { color: c.fg }]}>{HEADLINE[result.status]}</Text>
         <Text style={[font.display, { color: p.text }]}>{moneyPrecise(result.totalMonthlyCarCost)}</Text>
         <Text style={[font.body, { color: p.textMuted }]}>
           every month, all in — {percent(result.shareOfGrossIncome)} of your gross income and{' '}
@@ -54,12 +57,17 @@ export default function VerdictScreen() {
       </Card>
 
       <Card>
-        <Text style={[font.heading, { color: p.text }]}>The two numbers that matter</Text>
+        <Text style={[font.heading, { color: p.text }]}>What it would take</Text>
         <Row
-          label="Gross income you need for this to be comfortable"
+          label="Gross income for this to be affordable (20%)"
           value={money(result.requiredGrossMonthlyIncome)}
           emphasis
           tone={result.grossMonthlyIncome >= result.requiredGrossMonthlyIncome ? 'pass' : 'fail'}
+        />
+        <Row
+          label="Gross income for this to be comfortable (10%)"
+          value={money(result.comfortableGrossMonthlyIncome)}
+          tone={result.grossMonthlyIncome >= result.comfortableGrossMonthlyIncome ? 'pass' : 'fail'}
         />
         <Row
           label="Cash you need before driving away"
@@ -106,8 +114,8 @@ export default function VerdictScreen() {
         </Text>
         <Note>
           OYC therefore recommends a Singapore version: put down what the law requires, keep the loan to five
-          years or fewer, and keep all-in car costs under 15% of gross income — treating 15–20% as a stretch and
-          anything above 20% as a no.
+          years or fewer, and judge the total against gross income: under 10% comfortable, under 20%
+          affordable, under 30% barely affordable, and 30% or more too expensive.
         </Note>
       </Card>
     </Screen>
