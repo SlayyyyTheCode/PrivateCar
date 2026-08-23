@@ -7,7 +7,7 @@ import { BAND_ORDER } from '../src/core/bands';
 import { evaluateScenario } from '../src/core/verdict';
 import { COE, DATA_AS_OF, LOAN_RULES } from '../src/data/sg-2026-08';
 import { useScenario } from '../src/state/useScenario';
-import { CarModel3D } from '../src/ui/CarModel3D';
+import { BandMeter } from '../src/ui/BandMeter';
 import { money, percent } from '../src/ui/format';
 import { useCountUp } from '../src/ui/useCountUp';
 import { font, radius, spacing, usePalette } from '../src/ui/theme';
@@ -113,14 +113,26 @@ export default function Landing() {
             </View>
 
             <FadeIn delay={220} style={{ flex: wide ? 1 : undefined, width: '100%' }}>
-              <CarModel3D
-                bodyShape="sedan"
-                colour={result.band.tone === 'fail' ? '#E4574C' : result.band.tone === 'stretch' ? '#F0B65C' : '#5FD69A'}
-                style={{ width: '100%', height: wide ? 380 : 260 }}
-              />
-              <Text style={{ color: '#71829A', fontSize: 12, textAlign: 'center' }}>
-                Representative model — colour follows your verdict
-              </Text>
+              <View
+                style={{
+                  backgroundColor: '#111C2E',
+                  borderRadius: radius.lg,
+                  borderWidth: StyleSheet.hairlineWidth,
+                  borderColor: '#243449',
+                  padding: spacing.xl,
+                  gap: spacing.lg,
+                }}
+              >
+                <Text style={{ color: '#9FB0C6', fontSize: 13, letterSpacing: 1.2, fontWeight: '600' }}>
+                  WHERE THAT LANDS
+                </Text>
+                <BandMeter share={result.shareOfGrossIncome} />
+                <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: '#243449' }} />
+                <Text style={{ color: '#9FB0C6', fontSize: 14, lineHeight: 21 }}>
+                  On {money(result.grossMonthlyIncome)} a month gross. Change the income, the car, or paste a
+                  real listing and this moves with you.
+                </Text>
+              </View>
             </FadeIn>
           </View>
         </View>

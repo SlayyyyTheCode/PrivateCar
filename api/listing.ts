@@ -14,6 +14,10 @@ export const config = { runtime: 'edge' };
 const TIMEOUT_MS = 12_000;
 const MAX_BYTES = 4_000_000;
 
+/** Listings top out well below this; probing stops at the first gap anyway. */
+const MAX_GALLERY = 14;
+const PROBE_TIMEOUT_MS = 4_000;
+
 // Listing sites reject obviously automated clients outright.
 const BROWSER_HEADERS = {
   'User-Agent':
@@ -32,6 +36,62 @@ function json(body: unknown, status: number) {
       'Access-Control-Allow-Origin': '*',
     },
   });
+}
+
+/**
+ * Finds the rest of the gallery.
+ *
+ * The page's payload only advertises a couple of images, but the CDN holds the
+ * full set under a predictable name. Probing for them is what turns a single
+ * thumbnail into something you can actually spin through, and it costs one
+ * round of parallel HEAD requests.
+ */
+async function expandGallery(found: string[], listingId: string | null): Promise<string[]> {
+  const seed = found[0];
+  if (!seed || !listingId) return found;
+
+  const match = new RegExp(`^(.*/)${listingId}_[0-9a-z]+\\.(jpe?g|png|webp)$`, 'i').exec(seed);
+  if (!match) return found;
+
+  const [, directory, extension] = match;
+  const candidates = [
+    `${directory}${listingId}_1.${extension}`,
+    ...Array.from({ length: MAX_GALLERY }, (_, i) => `${directory}${listingId}_${i + 1}b.${extension}`),
+  ];
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
+
+  try {
+    const results = await Promise.all(
+      candidates.map(async (url) => {
+        try {
+          const head = await fetch(url, {
+            method: 'HEAD',
+            headers: BROWSER_HEADERS,
+            signal: controller.signal,
+          });
+          return head.ok ? url : null;
+        } catch {
+          return null;
+        }
+      }),
+    );
+
+    const live = results.filter((url): url is string => url !== null);
+    // Prefer the gallery images; the bare _1 is a small thumbnail.
+    const gallery = live.filter((url) => /_\d+b\./i.test(url));
+    return (gallery.length > 0 ? gallery : live.length > 0 ? live : found).sort(byGalleryIndex);
+  } catch {
+    return found;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+function byGalleryIndex(a: string, b: string): number {
+  const index = (url: string) => Number(/_(\d+)b?\./i.exec(url)?.[1] ?? 0);
+  return index(a) - index(b);
 }
 
 export default async function handler(request: Request): Promise<Response> {
@@ -82,6 +142,7 @@ export default async function handler(request: Request): Promise<Response> {
 
     const html = (await response.text()).slice(0, MAX_BYTES);
     const listing = parseListing(html, target);
+    listing.photos = await expandGallery(listing.photos, listing.listingId);
 
     // Nothing usable came back — better to say so than to show invented figures.
     if (listing.price === null && listing.omv === null) {

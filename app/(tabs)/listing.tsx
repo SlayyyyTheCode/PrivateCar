@@ -17,7 +17,7 @@ import { isSupportedListingUrl, listingToScenario, type ParsedListing } from '..
 import { evaluateScenario } from '../../src/core/verdict';
 import { fetchListing, ListingError } from '../../src/state/listingApi';
 import { useScenario } from '../../src/state/useScenario';
-import { CarModel3D } from '../../src/ui/CarModel3D';
+import { CarPhotoSpinner } from '../../src/ui/CarPhotoSpinner';
 import {
   AmountInput,
   Button,
@@ -86,9 +86,6 @@ export default function ListingScreen() {
       if (!controller.signal.aborted) setLoading(false);
     }
   }
-
-  const paintByVerdict =
-    preview?.band.tone === 'fail' ? '#E4574C' : preview?.band.tone === 'stretch' ? '#F0B65C' : '#5FD69A';
 
   return (
     <Screen>
@@ -179,18 +176,43 @@ export default function ListingScreen() {
           />
 
           <Card>
-            <CarModel3D
-              bodyShape={listing.bodyShape}
-              colour={paintByVerdict}
-              style={{ width: '100%', height: 240 }}
-            />
+            {listing.photos.length > 0 ? (
+              <CarPhotoSpinner
+                photos={listing.photos}
+                height={250}
+                caption={
+                  listing.photos.length > 1
+                    ? `${listing.photos.length} photos from the listing — drag to spin`
+                    : 'Photo from the listing'
+                }
+              />
+            ) : (
+              <View
+                style={{
+                  height: 140,
+                  borderRadius: radius.lg,
+                  backgroundColor: p.surfaceAlt,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: spacing.sm,
+                }}
+              >
+                <Ionicons name="image-outline" size={22} color={p.textFaint} />
+                <Text style={[font.caption, { color: p.textFaint }]}>
+                  This listing has no photographs.
+                </Text>
+              </View>
+            )}
             <Text style={[font.title, { color: p.text, textAlign: 'center' }]}>
               {listing.title ?? 'This car'}
             </Text>
-            <Text style={[font.caption, { color: p.textFaint, textAlign: 'center' }]}>
-              Representative {listing.vehicleType ?? listing.bodyShape} — not a photo of this vehicle. Paint
-              follows the verdict.
-            </Text>
+            {listing.vehicleType ? (
+              <Text style={[font.caption, { color: p.textFaint, textAlign: 'center' }]}>
+                {listing.vehicleType}
+                {listing.mileageKm !== null ? ` · ${listing.mileageKm.toLocaleString()} km` : ''}
+                {listing.owners !== null ? ` · ${listing.owners} owner${listing.owners === 1 ? '' : 's'}` : ''}
+              </Text>
+            ) : null}
           </Card>
 
           <Card>
