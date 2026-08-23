@@ -20,7 +20,14 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="listing"
+        options={{
+          title: 'Paste a link',
+          tabBarIcon: ({ color, size }) => <Ionicons name="link-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="calculator"
         options={{
           title: 'Your numbers',
           tabBarIcon: ({ color, size }) => <Ionicons name="create-outline" size={size} color={color} />,

@@ -1,4 +1,5 @@
 import { REGISTRATION_FEE, RULE_20_4_10, RULE_OYC, TDSR_CAP } from '../data/sg-2026-08';
+import { classifyBand, type BandResult } from './bands';
 import { annualGrossIncome, incomeAfterCpf } from './cpf';
 import { computeLoan, minDownPaymentPct, type LoanResult } from './loan';
 import { resolveCarPrice } from './price';
@@ -28,6 +29,8 @@ export interface VerdictResult {
   annualGrossIncome: number;
   shareOfGrossIncome: number;
   shareOfTakeHome: number;
+  /** The headline four-word verdict the app flashes at you. */
+  band: BandResult;
   rules: RuleResult[];
   tdsr: TdsrResult;
   upfront: UpfrontCashResult;
@@ -235,6 +238,7 @@ export function evaluateScenario(scenario: Scenario): VerdictResult {
     annualGrossIncome: annualGrossIncome(grossMonthly, scenario.income.annualBonusMonths),
     shareOfGrossIncome: grossMonthly > 0 ? totalMonthlyCarCost / grossMonthly : Infinity,
     shareOfTakeHome: takeHome > 0 ? totalMonthlyCarCost / takeHome : Infinity,
+    band: classifyBand(grossMonthly > 0 ? totalMonthlyCarCost / grossMonthly : Infinity),
     rules,
     tdsr: {
       ratio: tdsrRatio,

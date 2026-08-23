@@ -31,6 +31,8 @@ interface ScenarioState {
   removeCostLine: (id: string) => void;
 
   rename: (name: string) => void;
+  /** Replace the whole scenario, e.g. after reading a dealer listing. */
+  applyScenario: (next: Scenario) => void;
   saveCurrent: () => void;
   loadSaved: (id: string) => void;
   deleteSaved: (id: string) => void;
@@ -92,6 +94,8 @@ export const useScenario = create<ScenarioState>()(
         })),
 
       rename: (name) => set((s) => ({ scenario: { ...s.scenario, name } })),
+
+      applyScenario: (next) => set({ scenario: { ...next } }),
 
       saveCurrent: () =>
         set((s) => {
