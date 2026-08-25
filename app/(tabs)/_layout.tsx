@@ -16,20 +16,20 @@ export default function TabsLayout() {
           borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: p.border,
         },
-        tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
+        tabBarLabelStyle: { fontSize: 10, fontWeight: '500' },
       }}
     >
       <Tabs.Screen
         name="listing"
         options={{
-          title: 'Paste a link',
+          title: 'Listing',
           tabBarIcon: ({ color, size }) => <Ionicons name="link-outline" size={size} color={color} />,
         }}
       />
       <Tabs.Screen
         name="calculator"
         options={{
-          title: 'Your numbers',
+          title: 'Numbers',
           tabBarIcon: ({ color, size }) => <Ionicons name="create-outline" size={size} color={color} />,
         }}
       />
@@ -41,9 +41,16 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="trends"
+        options={{
+          title: 'Trends',
+          tabBarIcon: ({ color, size }) => <Ionicons name="stats-chart-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
         name="truecost"
         options={{
-          title: 'True cost',
+          title: 'Cost',
           tabBarIcon: ({ color, size }) => <Ionicons name="trending-down-outline" size={size} color={color} />,
         }}
       />

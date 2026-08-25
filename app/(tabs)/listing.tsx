@@ -179,7 +179,6 @@ export default function ListingScreen() {
             {listing.photos.length > 0 ? (
               <CarPhotoSpinner
                 photos={listing.photos}
-                height={250}
                 caption={
                   listing.photos.length > 1
                     ? `${listing.photos.length} photos from the listing — drag to spin`

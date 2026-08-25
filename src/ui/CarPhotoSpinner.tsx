@@ -35,12 +35,13 @@ export function CarPhotoSpinner({
   photos,
   caption,
   style,
-  height = 240,
+  aspectRatio = 4 / 3,
 }: {
   photos: string[];
   caption?: string;
   style?: StyleProp<ViewStyle>;
-  height?: number;
+  /** Listing photos are 4:3; matching the frame to them avoids cropping the car. */
+  aspectRatio?: number;
 }) {
   const p = usePalette();
 
@@ -122,10 +123,13 @@ export function CarPhotoSpinner({
       <View
         {...panHandlers}
         style={{
-          height,
+          width: '100%',
+          aspectRatio,
           borderRadius: radius.lg,
           overflow: 'hidden',
-          backgroundColor: p.surfaceAlt,
+          // Dark backing so any photo that is not 4:3 letterboxes deliberately
+          // rather than being cropped through the car.
+          backgroundColor: '#0A1220',
           borderWidth: StyleSheet.hairlineWidth,
           borderColor: p.border,
         }}
@@ -135,7 +139,7 @@ export function CarPhotoSpinner({
             <Image
               source={{ uri: url }}
               style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
+              resizeMode="contain"
               onLoad={() => setLoaded((state) => ({ ...state, [url]: true }))}
               onError={() => setFailed((state) => ({ ...state, [url]: true }))}
               accessibilityLabel={caption ?? 'Photograph of the car'}

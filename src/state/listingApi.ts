@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import type { ParsedListing } from '../core/listing';
+import type { Series } from '../data/history';
 
 /**
  * Client for the listing fetcher.
@@ -20,6 +21,17 @@ export class ListingError extends Error {
     this.name = 'ListingError';
     this.detail = detail;
   }
+}
+
+/** COE bidding history, reshaped into chartable series by the API route. */
+export async function fetchCoeHistory(signal?: AbortSignal): Promise<Series[]> {
+  const response = await fetch(`${API_BASE}/api/coe-history`, { signal });
+  const body = (await response.json()) as { series?: Series[]; error?: string };
+
+  if (!response.ok || !body.series) {
+    throw new ListingError(body.error ?? 'Could not load COE history.');
+  }
+  return body.series;
 }
 
 export async function fetchListing(url: string, signal?: AbortSignal): Promise<ParsedListing> {
