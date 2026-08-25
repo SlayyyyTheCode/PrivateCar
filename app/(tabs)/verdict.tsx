@@ -15,6 +15,7 @@ import {
   StatusPill,
   statusColors,
 } from '../../src/ui/components';
+import { BandMeter } from '../../src/ui/BandMeter';
 import { money, moneyPrecise, percent } from '../../src/ui/format';
 import { font, radius, spacing, usePalette } from '../../src/ui/theme';
 
@@ -44,6 +45,8 @@ export default function VerdictScreen() {
           every month, all in — {percent(result.shareOfGrossIncome)} of your gross income and{' '}
           {percent(result.shareOfTakeHome)} of your take-home pay.
         </Text>
+        <Divider />
+        <BandMeter share={result.shareOfGrossIncome} compact />
         <Divider />
         <Row label="Loan instalment" value={moneyPrecise(result.loan.monthlyInstalment)} />
         <Row label="Running costs" value={moneyPrecise(result.running.total)} />

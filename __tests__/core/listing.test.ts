@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parseListing, isSupportedListingUrl, listingToScenario } from '../../src/core/listing';
+import {
+  byGalleryIndex,
+  galleryCandidates,
+  isSupportedListingUrl,
+  listingToScenario,
+  parseListing,
+} from '../../src/core/listing';
 import { createDefaultScenario } from '../../src/core/defaults';
 
 const html = readFileSync(join(__dirname, '../fixtures/sgcarmart-listing.html'), 'utf-8');
@@ -68,10 +74,6 @@ describe('parseListing — real sgcarmart capture', () => {
 
   it('reads the declared fuel type', () => {
     expect(listing.fuelType).toBe('petrol');
-  });
-
-  it('infers a body shape for the 3D model', () => {
-    expect(listing.bodyShape).toBe('sedan');
   });
 
   it('records which fields it could not find, instead of inventing them', () => {
@@ -141,6 +143,43 @@ describe('parseListing — degrading safely', () => {
     const listing = parseListing('<html>Price $0 OMV $99,999,999</html>', 'https://sgcarmart.com/x');
     expect(listing.price).toBeNull();
     expect(listing.omv).toBeNull();
+  });
+});
+
+describe('galleryCandidates', () => {
+  const seed = 'https://i.i-sgcm.com/cars_used/202608/1530094_1b.jpg';
+
+  it('derives the whole gallery from one known image', () => {
+    const candidates = galleryCandidates(seed, '1530094');
+    expect(candidates).toContain('https://i.i-sgcm.com/cars_used/202608/1530094_1.jpg');
+    expect(candidates).toContain('https://i.i-sgcm.com/cars_used/202608/1530094_9b.jpg');
+    expect(candidates.length).toBeGreaterThan(9);
+  });
+
+  it('keeps the directory and file extension of the image it was given', () => {
+    for (const url of galleryCandidates(seed, '1530094')) {
+      expect(url.startsWith('https://i.i-sgcm.com/cars_used/202608/1530094_')).toBe(true);
+      expect(url.endsWith('.jpg')).toBe(true);
+    }
+  });
+
+  it('handles other extensions', () => {
+    const webp = galleryCandidates('https://cdn.example.com/a/b/777888_2b.webp', '777888');
+    expect(webp[0]).toBe('https://cdn.example.com/a/b/777888_1.webp');
+  });
+
+  it('gives up rather than guessing when there is nothing to pattern-match', () => {
+    expect(galleryCandidates(undefined, '1530094')).toEqual([]);
+    expect(galleryCandidates(seed, null)).toEqual([]);
+    // A URL that does not belong to this listing must not seed a gallery.
+    expect(galleryCandidates('https://i.i-sgcm.com/cars_used/202608/999_1b.jpg', '1530094')).toEqual([]);
+  });
+});
+
+describe('byGalleryIndex', () => {
+  it('orders numerically, not as strings', () => {
+    const urls = ['a/1_10b.jpg', 'a/1_2b.jpg', 'a/1_1b.jpg'];
+    expect([...urls].sort(byGalleryIndex)).toEqual(['a/1_1b.jpg', 'a/1_2b.jpg', 'a/1_10b.jpg']);
   });
 });
 

@@ -16,8 +16,6 @@ import type { FuelType, Scenario } from './types';
  * and in the unit tests, pinned against a real captured page.
  */
 
-export type BodyShape = 'sedan' | 'suv' | 'hatchback' | 'mpv' | 'wagon' | 'coupe';
-
 export interface ParsedListing {
   sourceUrl: string;
   listingId: string | null;
@@ -39,7 +37,6 @@ export interface ParsedListing {
   owners: number | null;
   vehicleType: string | null;
   fuelType: FuelType;
-  bodyShape: BodyShape;
   photos: string[];
   /** Fields the parser could not find. Surfaced in the UI so the user can fill them in. */
   missing: string[];
@@ -125,20 +122,6 @@ function parseCoeRemaining(raw: string | null): number | null {
   return months > 0 && months <= COE.validityMonths ? months : null;
 }
 
-const BODY_SHAPES: { pattern: RegExp; shape: BodyShape }[] = [
-  { pattern: /suv|4x4|crossover/i, shape: 'suv' },
-  { pattern: /hatchback/i, shape: 'hatchback' },
-  { pattern: /mpv|van|people/i, shape: 'mpv' },
-  { pattern: /wagon|estate/i, shape: 'wagon' },
-  { pattern: /coupe|convertible|roadster|sports/i, shape: 'coupe' },
-  { pattern: /sedan|saloon|luxury/i, shape: 'sedan' },
-];
-
-function inferBodyShape(vehicleType: string | null, title: string | null): BodyShape {
-  const haystack = `${vehicleType ?? ''} ${title ?? ''}`;
-  return BODY_SHAPES.find((entry) => entry.pattern.test(haystack))?.shape ?? 'sedan';
-}
-
 function fuelTypeIn(text: string): FuelType | null {
   if (/\belectric\b|\bkwh\b/i.test(text)) return 'ev';
   if (/hybrid/i.test(text)) return 'hybrid';
@@ -182,6 +165,36 @@ function parseTitle(payload: string, html: string, text: string): string | null 
   return cleaned.length > 0 ? cleaned : null;
 }
 
+/** Highest gallery index worth probing for. */
+export const MAX_GALLERY = 14;
+
+/**
+ * Candidate URLs for the rest of the gallery.
+ *
+ * A listing page advertises only one or two images in its payload, but the CDN
+ * holds the whole set under a predictable name. Deriving the pattern from a
+ * known-good URL is what turns a lone thumbnail into something you can spin
+ * through; the caller checks which of these actually exist.
+ */
+export function galleryCandidates(seedUrl: string | undefined, listingId: string | null): string[] {
+  if (!seedUrl || !listingId) return [];
+
+  const match = new RegExp(`^(.*/)${listingId}_[0-9a-z]+\\.(jpe?g|png|webp)$`, 'i').exec(seedUrl);
+  if (!match) return [];
+
+  const [, directory, extension] = match;
+  return [
+    `${directory}${listingId}_1.${extension}`,
+    ...Array.from({ length: MAX_GALLERY }, (_, i) => `${directory}${listingId}_${i + 1}b.${extension}`),
+  ];
+}
+
+/** Orders gallery URLs by their numeric index rather than as strings. */
+export function byGalleryIndex(a: string, b: string): number {
+  const index = (url: string) => Number(/_(\d+)b?\./i.exec(url)?.[1] ?? 0);
+  return index(a) - index(b);
+}
+
 export function parseListing(html: string, sourceUrl: string): ParsedListing {
   // The payload is JSON embedded in a JS string, so its quotes arrive escaped.
   const payload = html.replace(/\\"/g, '"');
@@ -218,7 +231,6 @@ export function parseListing(html: string, sourceUrl: string): ParsedListing {
     owners: firstNumber(field('owner', 'No\\. of Owners')),
     vehicleType,
     fuelType: inferFuelType(jsonValue(payload, 'fuel_type'), text),
-    bodyShape: inferBodyShape(vehicleType, title),
     photos: parsePhotos(payload, listingId),
     missing: [],
   };

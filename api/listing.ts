@@ -1,4 +1,9 @@
-import { isSupportedListingUrl, parseListing } from '../src/core/listing';
+import {
+  byGalleryIndex,
+  galleryCandidates,
+  isSupportedListingUrl,
+  parseListing,
+} from '../src/core/listing';
 
 /**
  * Fetches a car listing and returns it parsed.
@@ -14,8 +19,6 @@ export const config = { runtime: 'edge' };
 const TIMEOUT_MS = 12_000;
 const MAX_BYTES = 4_000_000;
 
-/** Listings top out well below this; probing stops at the first gap anyway. */
-const MAX_GALLERY = 14;
 const PROBE_TIMEOUT_MS = 4_000;
 
 // Listing sites reject obviously automated clients outright.
@@ -41,23 +44,12 @@ function json(body: unknown, status: number) {
 /**
  * Finds the rest of the gallery.
  *
- * The page's payload only advertises a couple of images, but the CDN holds the
- * full set under a predictable name. Probing for them is what turns a single
- * thumbnail into something you can actually spin through, and it costs one
- * round of parallel HEAD requests.
+ * The candidate names come from src/core/listing.ts, which is unit tested; all
+ * this adds is one round of parallel HEAD requests to see which exist.
  */
 async function expandGallery(found: string[], listingId: string | null): Promise<string[]> {
-  const seed = found[0];
-  if (!seed || !listingId) return found;
-
-  const match = new RegExp(`^(.*/)${listingId}_[0-9a-z]+\\.(jpe?g|png|webp)$`, 'i').exec(seed);
-  if (!match) return found;
-
-  const [, directory, extension] = match;
-  const candidates = [
-    `${directory}${listingId}_1.${extension}`,
-    ...Array.from({ length: MAX_GALLERY }, (_, i) => `${directory}${listingId}_${i + 1}b.${extension}`),
-  ];
+  const candidates = galleryCandidates(found[0], listingId);
+  if (candidates.length === 0) return found;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), PROBE_TIMEOUT_MS);
@@ -79,7 +71,7 @@ async function expandGallery(found: string[], listingId: string | null): Promise
     );
 
     const live = results.filter((url): url is string => url !== null);
-    // Prefer the gallery images; the bare _1 is a small thumbnail.
+    // Prefer the full-size gallery images; the bare _1 is a small thumbnail.
     const gallery = live.filter((url) => /_\d+b\./i.test(url));
     return (gallery.length > 0 ? gallery : live.length > 0 ? live : found).sort(byGalleryIndex);
   } catch {
@@ -87,11 +79,6 @@ async function expandGallery(found: string[], listingId: string | null): Promise
   } finally {
     clearTimeout(timeout);
   }
-}
-
-function byGalleryIndex(a: string, b: string): number {
-  const index = (url: string) => Number(/_(\d+)b?\./i.exec(url)?.[1] ?? 0);
-  return index(a) - index(b);
 }
 
 export default async function handler(request: Request): Promise<Response> {

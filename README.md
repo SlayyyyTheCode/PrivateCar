@@ -35,7 +35,7 @@ The most-cited rule online is American, and two of its three legs are impossible
 
 ## What it does
 
-**Paste a listing.** Give it an sgcarmart URL and it returns the asking price, OMV, ARF, COE, engine capacity, road tax, registration date, remaining COE, mileage and owner count — then flashes the verdict and spins a 3D car painted by that verdict.
+**Paste a listing.** Give it an sgcarmart URL and it returns the asking price, OMV, ARF, COE, engine capacity, road tax, registration date, remaining COE, mileage and owner count — then flashes the verdict and spins through the listing's own photographs of the car.
 
 **Or enter it yourself.** Every field is editable, including all the running costs: petrol or charging, maintenance, servicing, washing, HDB season parking, other parking, insurance, ERP, road tax, plus your own custom lines.
 
@@ -57,7 +57,7 @@ npm start          # scan the QR code with Expo Go
 | Command | What it does |
 |---|---|
 | `npm start` | Dev server — runs in Expo Go, no native build needed |
-| `npm test` | Calculation engine test suite (117 tests) |
+| `npm test` | Calculation engine test suite (121 tests) |
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run lint` | ESLint |
 | `npm run icons` | Regenerate app icons from `scripts/generate-icons.mjs` |
@@ -66,7 +66,7 @@ npm start          # scan the QR code with Expo Go
 
 ```
 app/
-  index.tsx               Landing page — hero, rotating car, the four bands
+  index.tsx               Landing page — hero, band meter, the four bands
   (tabs)/listing.tsx      Paste a link, flash the verdict
   (tabs)/calculator.tsx   Income, car, loan, monthly expenses
   (tabs)/verdict.tsx      20-4-10 vs the OYC rule, TDSR, cash needed
@@ -79,7 +79,7 @@ src/core/                 Pure TypeScript engine — no React Native imports
   arf / roadTax / cpf / loan / price / running / verdict / tco
 src/data/sg-2026-08.ts    Versioned Singapore constants, all user-editable
 src/state/                Zustand store (AsyncStorage) and the listing client
-src/ui/                   Tokens, components, and the three.js car
+src/ui/                   Tokens, components, band meter, photo spinner
 __tests__/core/           The calculation contract
 __tests__/fixtures/       A real captured listing page, pinning the parser
 ```
@@ -99,9 +99,13 @@ python scripts/capture-listing-fixture.py
 
 The parser reads a JSON payload embedded in the page, falls back to the visible spec labels, then to plain text. Anything it cannot find is reported in `missing` rather than guessed at — and it refuses pages that do not mention the listing id you asked for, because a dead listing still returns HTTP 200 on a page selling other cars.
 
-## The 3D car
+## Why photographs, not a 3D model
 
-No real 3D model exists for an arbitrary used-car listing, so the car is procedural — built from primitives in [`src/ui/CarScene.tsx`](src/ui/CarScene.tsx), shaped by the listing's body type and painted by the verdict. The app says it is a representation. The scene is shared; only the canvas differs, `@react-three/fiber` on web and `expo-gl` on native.
+The car is shown as the listing's own photographs, cross-fading on a timer and draggable to scrub. Two earlier attempts at a procedural 3D model both read as stacked blocks, and the premise was the problem rather than the geometry: a generated car is never *the* car you are looking at.
+
+Reconstructing real geometry from the photographs is not possible either. It is not merely difficult — it is underdetermined. Dealer galleries are marketing angles rather than an orbit of the subject, and glossy paint makes structure-from-motion match the moving reflections instead of the surface. Photogrammetry of cars needs dozens of overlapping frames and polarised light.
+
+A listing page advertises only one or two images in its payload, but the CDN holds the full set under a predictable name. [`galleryCandidates`](src/core/listing.ts) derives it and the API confirms which exist with one round of parallel HEAD requests — nine frames for the reference listing, from a single advertised thumbnail.
 
 ## Data
 
