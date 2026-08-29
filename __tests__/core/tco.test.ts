@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { computeTco, coeRebate, parfRebate } from '../../src/core/tco';
 import { createDefaultScenario } from '../../src/core/defaults';
+import { COE } from '../../src/data/sg-2026-08';
 
 describe('parfRebate', () => {
   it('pays 30% of ARF under the Budget 2026 schedule for a young car', () => {
@@ -91,7 +92,8 @@ describe('computeTco — selling early', () => {
   it('returns both rebates when sold at year 4', () => {
     const result = computeTco(scenario, 48);
     expect(result.parfRebate).toBeCloseTo(34_000 * 0.3, 6);
-    expect(result.coeRebate).toBeCloseTo((123_890 * 72) / 120, 6);
+    // Derived from the constant so refreshing the COE default cannot break this.
+    expect(result.coeRebate).toBeCloseTo((COE.catA * 72) / 120, 6);
   });
 
   it('still counts the loan balance outstanding at the point of sale', () => {

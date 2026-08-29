@@ -70,7 +70,7 @@ export function rangeStart(preset: RangePreset, anchor: string | null): string |
  * it is what "the price that year" means.
  */
 export function aggregate(points: TimePoint[], granularity: Granularity): TimePoint[] {
-  const buckets = new Map<string, { total: number; count: number }>();
+  const buckets = new Map<string, { total: number; count: number; label?: string }>();
 
   for (const point of points) {
     if (!Number.isFinite(point.value)) continue;
@@ -78,11 +78,18 @@ export function aggregate(points: TimePoint[], granularity: Granularity): TimePo
     const bucket = buckets.get(key) ?? { total: 0, count: 0 };
     bucket.total += point.value;
     bucket.count += 1;
+    // A label only survives if it still describes the whole bucket. Averaging
+    // two bidding exercises together makes "2nd exercise" a lie.
+    bucket.label = bucket.count === 1 ? point.label : undefined;
     buckets.set(key, bucket);
   }
 
   return Array.from(buckets.entries())
-    .map(([key, bucket]) => ({ date: normaliseDate(key), value: bucket.total / bucket.count }))
+    .map(([key, bucket]) => ({
+      date: normaliseDate(key),
+      value: bucket.total / bucket.count,
+      ...(bucket.label ? { label: bucket.label } : {}),
+    }))
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 

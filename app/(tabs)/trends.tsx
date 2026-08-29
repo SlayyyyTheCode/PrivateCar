@@ -5,7 +5,9 @@ import { RANGE_PRESETS, prepare, summarise, type RangePreset } from '../../src/c
 import {
   COE_FALLBACK,
   COE_SOURCE,
+  FUEL_BASIS,
   FUEL_SERIES,
+  FUEL_SNAPSHOT,
   FUEL_SOURCE,
   PARKING_SERIES,
   PARKING_SOURCE,
@@ -93,9 +95,11 @@ export default function TrendsScreen() {
         />
       )}
 
+      <RetailerCard />
+
       <TrendCard
-        title="Pump prices"
-        caption="Posted price before card discounts, which typically take 15–20% off."
+        title="Pump prices over time"
+        caption={FUEL_BASIS + '. Card discounts typically take 15–20% off.'}
         series={FUEL_SERIES}
         preset={preset}
         format={(value) => `$${value.toFixed(2)}`}
@@ -123,6 +127,91 @@ export default function TrendsScreen() {
         <RateCard key={group.id} group={group} />
       ))}
     </Screen>
+  );
+}
+
+const GRADES = [
+  { key: 'petrol92' as const, label: '92' },
+  { key: 'petrol95' as const, label: '95' },
+  { key: 'petrol98' as const, label: '98' },
+  { key: 'diesel' as const, label: 'Diesel' },
+];
+
+/**
+ * Today's posted price at each of the five major retailers.
+ *
+ * Deliberately a dated snapshot rather than a live feed: both comparison sites
+ * build their tables in the browser, so a server has nothing to read. Claiming
+ * "live" here would be the easiest lie in the app to tell.
+ */
+function RetailerCard() {
+  const p = usePalette();
+
+  const cheapest = useMemo(() => {
+    const result: Record<string, number> = {};
+    for (const grade of GRADES) {
+      const values = FUEL_SNAPSHOT.retailers
+        .map((retailer) => retailer.grades[grade.key])
+        .filter((value): value is number => value !== null);
+      if (values.length > 0) result[grade.key] = Math.min(...values);
+    }
+    return result;
+  }, []);
+
+  return (
+    <Card>
+      <Text style={[font.heading, { color: p.text }]}>Pump prices by retailer</Text>
+      <Text style={[font.caption, { color: p.textMuted }]}>
+        {FUEL_BASIS}, as at {FUEL_SNAPSHOT.asOf}. Cheapest of each grade is highlighted.
+      </Text>
+
+      <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+        <Text style={[font.caption, { color: p.textFaint, flex: 1.4 }]}> </Text>
+        {GRADES.map((grade) => (
+          <Text
+            key={grade.key}
+            style={[font.caption, { color: p.textFaint, flex: 1, textAlign: 'right', fontWeight: '700' }]}
+          >
+            {grade.label}
+          </Text>
+        ))}
+      </View>
+
+      {FUEL_SNAPSHOT.retailers.map((retailer) => (
+        <View key={retailer.retailer} style={{ flexDirection: 'row', gap: spacing.sm, alignItems: 'center' }}>
+          <Text style={[font.body, { color: p.text, flex: 1.4 }]}>{retailer.retailer}</Text>
+          {GRADES.map((grade) => {
+            const value = retailer.grades[grade.key];
+            const best = value !== null && value === cheapest[grade.key];
+            return (
+              <Text
+                key={grade.key}
+                style={[
+                  font.mono,
+                  {
+                    flex: 1,
+                    textAlign: 'right',
+                    fontSize: 13,
+                    color: value === null ? p.textFaint : best ? p.pass : p.text,
+                    fontWeight: best ? '800' : '600',
+                  },
+                ]}
+              >
+                {value === null ? '—' : value.toFixed(2)}
+              </Text>
+            );
+          })}
+        </View>
+      ))}
+
+      <Note>
+        A dated snapshot, not a live feed — both price-comparison sites render their tables in the browser,
+        so there is nothing for a server to read. Check the station before filling up.
+      </Note>
+      <Text style={[font.caption, { color: p.textFaint }]}>
+        Cross-checked against {FUEL_SNAPSHOT.verifiedAgainst.join(' and ')}.
+      </Text>
+    </Card>
   );
 }
 

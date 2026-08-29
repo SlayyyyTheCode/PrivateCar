@@ -75,8 +75,22 @@ export function TrendChart({ series, format }: TrendChartProps) {
     return Array.from({ length: count }, (_, i) => extent.min + ((extent.max - extent.min) * i) / (count - 1));
   }, [extent]);
 
+  // A point may carry its own label — COE says which bidding exercise it was,
+  // because the dataset never gives the closing day.
+  const labels = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const entry of series) {
+      for (const point of entry.points) {
+        if (point.label) map.set(normaliseDate(point.date), point.label);
+      }
+    }
+    return map;
+  }, [series]);
+
   const activeIndex = selected ?? dates.length - 1;
   const activeDate = dates[activeIndex];
+  const axisLabel = (date: string | undefined) =>
+    (date ? labels.get(date) : undefined) ?? formatDateLabel(date);
 
   if (dates.length === 0) {
     return (
@@ -90,7 +104,7 @@ export function TrendChart({ series, format }: TrendChartProps) {
     <View style={{ gap: spacing.sm }}>
       {/* Readout for the selected point, so values are never guessed off the axis. */}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: spacing.md, alignItems: 'baseline' }}>
-        <Text style={[font.caption, { color: p.textMuted }]}>{formatDateLabel(activeDate)}</Text>
+        <Text style={[font.caption, { color: p.textMuted }]}>{axisLabel(activeDate)}</Text>
         {series.map((entry, i) => {
           const value = paths[i]?.byDate.get(activeDate);
           return (
@@ -204,9 +218,9 @@ export function TrendChart({ series, format }: TrendChartProps) {
       </View>
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: PADDING.left }}>
-        <Text style={[font.caption, { color: p.textFaint, fontSize: 10 }]}>{formatDateLabel(dates[0])}</Text>
+        <Text style={[font.caption, { color: p.textFaint, fontSize: 10 }]}>{axisLabel(dates[0])}</Text>
         <Text style={[font.caption, { color: p.textFaint, fontSize: 10 }]}>
-          {formatDateLabel(dates[dates.length - 1])}
+          {axisLabel(dates[dates.length - 1])}
         </Text>
       </View>
 

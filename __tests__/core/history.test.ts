@@ -72,6 +72,25 @@ describe('aggregate', () => {
   it('has nothing to say about an empty series', () => {
     expect(aggregate([], 'year')).toEqual([]);
   });
+
+  it('keeps a point’s own label when it alone fills the bucket', () => {
+    const result = aggregate([{ date: '2026-08-16', value: 128_501, label: 'Aug 2026 · 2nd exercise' }], 'day');
+    expect(result[0].label).toBe('Aug 2026 · 2nd exercise');
+  });
+
+  it('drops the label once points are averaged together', () => {
+    // "2nd exercise" stops being true the moment both rounds are averaged.
+    const result = aggregate(
+      [
+        { date: '2026-08-01', value: 123_890, label: 'Aug 2026 · 1st exercise' },
+        { date: '2026-08-16', value: 128_501, label: 'Aug 2026 · 2nd exercise' },
+      ],
+      'month',
+    );
+    expect(result).toHaveLength(1);
+    expect(result[0].label).toBeUndefined();
+    expect(result[0].value).toBeCloseTo(126_195.5, 2);
+  });
 });
 
 describe('filterFrom and rangeStart', () => {

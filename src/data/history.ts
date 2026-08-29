@@ -16,6 +16,11 @@ export interface TimePoint {
   /** ISO date. Series with only annual resolution use the first of January. */
   date: string;
   value: number;
+  /**
+   * Overrides the axis label. COE uses it to say "Aug 2026 · 2nd exercise",
+   * because the dataset gives the month and round but never the closing day.
+   */
+  label?: string;
 }
 
 export interface Series {
@@ -70,19 +75,62 @@ export const COE_FALLBACK: Series[] = [
 // ---------------------------------------------------------------------------
 
 export const FUEL_SOURCE: HistorySource = {
-  label: 'Published pump prices (SingSaver, Motorist, GlobalPetrolPrices)',
-  url: 'https://www.motorist.sg/petrol-prices',
+  label: 'Posted pump prices — petrolprice.sg and Motorist, cross-checked',
+  url: 'https://petrolprice.sg/',
   basis: 'indicative',
   note:
-    'Singapore has no official pump-price feed. This series is built from published ' +
-    'reference points and shows the shape of the trend, not an exact daily price.',
+    'Singapore publishes no official pump-price feed. The latest point is a verified ' +
+    'average of Esso, Shell, SPC, Caltex and Sinopec posted prices; earlier years are ' +
+    'reference points and show the shape of the trend, not a price on any given day.',
+};
+
+/** Every price on this screen is the posted price, before card discounts. */
+export const FUEL_BASIS = 'Posted pump price, before card and loyalty discounts';
+
+export interface RetailerPrice {
+  retailer: string;
+  /** Null where that retailer does not sell the grade. */
+  grades: { petrol92: number | null; petrol95: number | null; petrol98: number | null; diesel: number | null };
+}
+
+/**
+ * A dated snapshot across the five major retailers.
+ *
+ * Not live: both price-comparison sites render their tables in the browser, so
+ * there is nothing for a server to read. Rather than fake a live feed, this is
+ * stamped with the date it was taken and cross-checked against two sources.
+ */
+export const FUEL_SNAPSHOT = {
+  asOf: '29 August 2026',
+  verifiedAgainst: ['petrolprice.sg', 'motorist.sg'],
+  retailers: [
+    { retailer: 'Esso', grades: { petrol92: 3.34, petrol95: 3.37, petrol98: 3.89, diesel: 3.95 } },
+    { retailer: 'Shell', grades: { petrol92: null, petrol95: 3.37, petrol98: 3.89, diesel: 3.95 } },
+    { retailer: 'SPC', grades: { petrol92: 3.34, petrol95: 3.36, petrol98: 3.88, diesel: 3.89 } },
+    { retailer: 'Caltex', grades: { petrol92: 3.34, petrol95: 3.37, petrol98: null, diesel: 4.05 } },
+    { retailer: 'Sinopec', grades: { petrol92: null, petrol95: 3.37, petrol98: 3.88, diesel: 3.89 } },
+  ] as RetailerPrice[],
 };
 
 /**
- * Annual averages of the posted pump price, before the discounts every station
- * runs. What you actually pay is typically 15-20% lower with a credit card.
+ * Annual reference points for the posted pump price.
+ *
+ * The 2026 figures are the mean of the five retailers above. Earlier years are
+ * indicative: they are drawn from published reporting rather than a continuous
+ * series, and the card says so on screen.
  */
 export const FUEL_SERIES: Series[] = [
+  {
+    id: 'petrol92',
+    label: 'Petrol 92',
+    unit: '$/L',
+    points: [
+      { date: '2020-01-01', value: 1.9 },
+      { date: '2022-01-01', value: 2.94 },
+      { date: '2024-01-01', value: 2.79 },
+      { date: '2026-08-29', value: 3.34 },
+    ],
+  },
   {
     id: 'petrol95',
     label: 'Petrol 95',
@@ -95,7 +143,7 @@ export const FUEL_SERIES: Series[] = [
       { date: '2023-01-01', value: 2.92 },
       { date: '2024-01-01', value: 2.88 },
       { date: '2025-01-01', value: 2.9 },
-      { date: '2026-08-01', value: 3.46 },
+      { date: '2026-08-29', value: 3.37 },
     ],
   },
   {
@@ -110,7 +158,7 @@ export const FUEL_SERIES: Series[] = [
       { date: '2023-01-01', value: 3.42 },
       { date: '2024-01-01', value: 3.38 },
       { date: '2025-01-01', value: 3.4 },
-      { date: '2026-08-01', value: 3.97 },
+      { date: '2026-08-29', value: 3.89 },
     ],
   },
   {
@@ -125,7 +173,7 @@ export const FUEL_SERIES: Series[] = [
       { date: '2023-01-01', value: 2.74 },
       { date: '2024-01-01', value: 2.66 },
       { date: '2025-01-01', value: 2.7 },
-      { date: '2026-08-01', value: 3.56 },
+      { date: '2026-08-29', value: 3.95 },
     ],
   },
 ];
@@ -136,7 +184,7 @@ export const FUEL_SERIES: Series[] = [
 
 export const PARKING_SOURCE: HistorySource = {
   label: 'HDB and URA season parking charges',
-  url: 'https://www.hdb.gov.sg/car-parks/season-parking-tickets',
+  url: 'https://www.hdb.gov.sg/residential/car-parks',
   basis: 'official',
   note:
     'Public season parking rates change rarely: once in 2016, after fourteen years unchanged. ' +

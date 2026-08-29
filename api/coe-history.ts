@@ -1,4 +1,4 @@
-import { COE_DATASET_ID } from '../src/data/history';
+import { COE_DATASET_ID, type TimePoint } from '../src/data/history';
 
 /**
  * COE bidding results, proxied from LTA's dataset on data.gov.sg.
@@ -14,6 +14,14 @@ const UPSTREAM = 'https://data.gov.sg/api/action/datastore_search';
 const TIMEOUT_MS = 12_000;
 /** Two exercises a month since 2010 across five categories — this covers all of it. */
 const PAGE_SIZE = 5_000;
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/** "2026-08" becomes "Aug 2026". */
+function monthName(month: string): string {
+  const [year, index] = month.split('-');
+  return `${MONTHS[Number(index) - 1] ?? month} ${year}`;
+}
 
 interface Record {
   month?: string;
@@ -55,7 +63,7 @@ export default async function handler(): Promise<Response> {
     }
 
     // Reshape into the series the chart wants, so the client does no parsing.
-    const byClass = new Map<string, { date: string; value: number }[]>();
+    const byClass = new Map<string, TimePoint[]>();
 
     for (const record of records) {
       const month = record.month;
@@ -64,10 +72,18 @@ export default async function handler(): Promise<Response> {
       if (!month || !category || !Number.isFinite(premium) || premium <= 0) continue;
 
       const list = byClass.get(category) ?? [];
-      // Bidding exercise 1 lands on the 1st, exercise 2 mid-month, so the two
-      // rounds stay distinct on a daily axis.
-      const day = record.bidding_no === '2' ? '15' : '01';
-      list.push({ date: `${month}-${day}`, value: premium });
+
+      // The dataset gives the month and the round, never the closing day —
+      // exercises close on varying Wednesdays. The day here orders the two
+      // rounds within a month and nothing more, so the point carries a label
+      // saying which exercise it was rather than asserting a date that would
+      // be wrong.
+      const second = record.bidding_no === '2';
+      list.push({
+        date: `${month}-${second ? '16' : '01'}`,
+        value: premium,
+        label: `${monthName(month)} · ${second ? '2nd' : '1st'} exercise`,
+      });
       byClass.set(category, list);
     }
 

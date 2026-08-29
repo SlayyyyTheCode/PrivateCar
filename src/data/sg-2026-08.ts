@@ -9,7 +9,7 @@
 
 import type { ParfScheme } from '../core/types';
 
-export const DATA_AS_OF = 'August 2026';
+export const DATA_AS_OF = 'August 2026 (2nd COE exercise, 19 Aug)';
 
 export interface Source {
   label: string;
@@ -45,7 +45,7 @@ export const SOURCES: Source[] = [
   },
   {
     label: 'HDB — Season parking charges',
-    url: 'https://www.hdb.gov.sg/car-parks/season-parking-tickets',
+    url: 'https://www.hdb.gov.sg/residential/car-parks',
   },
   {
     label: 'CPF Board — Contribution rates',
@@ -54,12 +54,14 @@ export const SOURCES: Source[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// COE — August 2026, first bidding exercise
+// COE — August 2026, second bidding exercise (closed 19 Aug)
 // ---------------------------------------------------------------------------
 
 export const COE = {
-  catA: 123_890, // cars up to 1,600cc and 97kW
-  catB: 129_910, // cars above 1,600cc or 97kW
+  // Second bidding exercise of August 2026, which closed on the 19th. The
+  // Trends tab reads the live LTA feed; these are only the starting defaults.
+  catA: 128_501, // cars up to 1,600cc and 97kW (130bhp)
+  catB: 131_001, // cars above 1,600cc or 97kW
   /** A COE runs for 10 years. */
   validityMonths: 120,
 };
