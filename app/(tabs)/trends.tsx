@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { RANGE_PRESETS, prepare, summarise, type RangePreset } from '../../src/core/history';
 import {
   COE_FALLBACK,
@@ -17,7 +17,19 @@ import {
   type Series,
 } from '../../src/data/history';
 import { fetchCoeHistory } from '../../src/state/listingApi';
-import { Card, Divider, LinkRow, Note, Row, Screen, ScreenTitle, Segmented } from '../../src/ui/components';
+import {
+  Card,
+  Divider,
+  LinkRow,
+  Note,
+  Row,
+  Screen,
+  ScreenTitle,
+  Section,
+  Segmented,
+  Skeleton,
+  SourceBadge,
+} from '../../src/ui/components';
 import { ChartLegend, TrendChart } from '../../src/ui/TrendChart';
 import { money, percent } from '../../src/ui/format';
 import { font, radius, spacing, usePalette } from '../../src/ui/theme';
@@ -55,28 +67,28 @@ export default function TrendsScreen() {
         subtitle="What the costs of owning a car here have actually done over time."
       />
 
-      <Card>
-        <Text style={[font.label, { color: p.textMuted }]}>Time range</Text>
+      <View style={{ gap: spacing.sm }}>
         <Segmented
           value={preset.id}
           options={RANGE_PRESETS.map((entry) => ({ value: entry.id, label: entry.label }))}
           onChange={(id) => setPreset(RANGE_PRESETS.find((entry) => entry.id === id) ?? RANGE_PRESETS[2])}
         />
-        <Text style={[font.caption, { color: p.textFaint }]}>
+        <Text style={[font.caption, { color: p.textFaint, paddingHorizontal: spacing.xs }]}>
           {preset.granularity === 'day'
             ? 'Every bidding exercise and price point.'
             : preset.granularity === 'month'
               ? 'Averaged by month.'
               : 'Averaged by year.'}
         </Text>
-      </Card>
+      </View>
 
       {coe === null ? (
         <Card>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-            <ActivityIndicator color={p.accent} />
-            <Text style={[font.body, { color: p.textMuted }]}>Loading COE results from LTA…</Text>
-          </View>
+          <Skeleton width="45%" height={18} />
+          <Skeleton width="70%" height={12} />
+          <Skeleton width="55%" height={30} style={{ marginTop: spacing.sm }} />
+          <Skeleton height={190} style={{ marginTop: spacing.sm }} />
+          <Text style={[font.caption, { color: p.textFaint }]}>Loading COE results from LTA…</Text>
         </Card>
       ) : (
         <TrendCard
@@ -117,15 +129,14 @@ export default function TrendsScreen() {
         source={PARKING_SOURCE}
       />
 
-      <Text style={[font.display, { color: p.text, marginTop: spacing.md }]}>What things cost</Text>
-      <Text style={[font.body, { color: p.textMuted }]}>
-        Five typical bands for each running cost, so you can tell whether a quote you have been given is
-        reasonable.
-      </Text>
-
-      {RATE_GROUPS.map((group) => (
-        <RateCard key={group.id} group={group} />
-      ))}
+      <Section
+        title="What things cost"
+        subtitle="Five typical bands each, so you can tell whether a quote you have been given is reasonable."
+      >
+        {RATE_GROUPS.map((group) => (
+          <RateCard key={group.id} group={group} />
+        ))}
+      </Section>
     </Screen>
   );
 }
@@ -277,26 +288,8 @@ function TrendCard({
 
       {warning ? <Note tone="warn">{warning}</Note> : null}
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
-        <View
-          style={{
-            paddingHorizontal: spacing.sm,
-            paddingVertical: 2,
-            borderRadius: radius.pill,
-            backgroundColor: source.basis === 'official' ? p.passSoft : p.stretchSoft,
-          }}
-        >
-          <Text
-            style={[
-              font.caption,
-              { color: source.basis === 'official' ? p.pass : p.stretch, fontWeight: '700', fontSize: 11 },
-            ]}
-          >
-            {source.basis === 'official' ? 'OFFICIAL DATA' : 'INDICATIVE'}
-          </Text>
-        </View>
-      </View>
-      <Text style={[font.caption, { color: p.textFaint, lineHeight: 17 }]}>{source.note}</Text>
+      <SourceBadge basis={source.basis} />
+      <Text style={[font.caption, { color: p.textFaint }]}>{source.note}</Text>
       <LinkRow label={source.label} url={source.url} />
     </Card>
   );

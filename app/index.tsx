@@ -10,7 +10,7 @@ import { useScenario } from '../src/state/useScenario';
 import { BandMeter } from '../src/ui/BandMeter';
 import { money, percent } from '../src/ui/format';
 import { useCountUp } from '../src/ui/useCountUp';
-import { font, radius, spacing, usePalette } from '../src/ui/theme';
+import { font, motion, radius, spacing, usePalette, useReducedMotion } from '../src/ui/theme';
 
 /**
  * The landing page.
@@ -43,7 +43,7 @@ export default function Landing() {
         {/* ---------------------------------------------------------------- */}
         <View
           style={{
-            backgroundColor: '#0A1220',
+            backgroundColor: p.heroBackground,
             paddingTop: insets.top + spacing.xl,
             paddingBottom: spacing.xxl,
             paddingHorizontal: spacing.lg,
@@ -65,8 +65,8 @@ export default function Landing() {
             <View style={{ flex: wide ? 1 : undefined, gap: spacing.lg, width: '100%' }}>
               <FadeIn delay={0}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.sm }}>
-                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: '#5FD69A' }} />
-                  <Text style={[font.label, { color: '#9FB0C6', letterSpacing: 1.4 }]}>
+                  <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: p.pass }} />
+                  <Text style={[font.label, { color: p.heroMuted, letterSpacing: 1.4 }]}>
                     OYC · OWN YOUR CAR
                   </Text>
                 </View>
@@ -75,7 +75,7 @@ export default function Landing() {
               <FadeIn delay={90}>
                 <Text
                   style={{
-                    color: '#EAF0F8',
+                    color: p.heroText,
                     fontSize: wide ? 62 : 40,
                     lineHeight: wide ? 66 : 46,
                     fontWeight: '800',
@@ -83,13 +83,13 @@ export default function Landing() {
                   }}
                 >
                   A car in Singapore{'\n'}costs you{' '}
-                  <Text style={{ color: '#5FD69A' }}>{money(monthly)}</Text>{' '}
-                  <Text style={{ color: '#9FB0C6', fontWeight: '600' }}>a month.</Text>
+                  <Text style={{ color: p.pass }}>{money(monthly)}</Text>{' '}
+                  <Text style={{ color: p.heroMuted, fontWeight: '600' }}>a month.</Text>
                 </Text>
               </FadeIn>
 
               <FadeIn delay={180}>
-                <Text style={{ color: '#9FB0C6', fontSize: 17, lineHeight: 26, maxWidth: 540 }}>
+                <Text style={{ color: p.heroMuted, fontSize: 17, lineHeight: 26, maxWidth: 540 }}>
                   Not the instalment. Everything — petrol, parking, insurance, ERP, road tax, servicing, and
                   the interest the flat rate hides. Paste a listing and find out where you actually stand.
                 </Text>
@@ -115,20 +115,20 @@ export default function Landing() {
             <FadeIn delay={220} style={{ flex: wide ? 1 : undefined, width: '100%' }}>
               <View
                 style={{
-                  backgroundColor: '#111C2E',
+                  backgroundColor: p.heroSurface,
                   borderRadius: radius.lg,
                   borderWidth: StyleSheet.hairlineWidth,
-                  borderColor: '#243449',
+                  borderColor: p.heroBorder,
                   padding: spacing.xl,
                   gap: spacing.lg,
                 }}
               >
-                <Text style={{ color: '#9FB0C6', fontSize: 13, letterSpacing: 1.2, fontWeight: '600' }}>
+                <Text style={{ color: p.heroMuted, fontSize: 13, letterSpacing: 1.2, fontWeight: '600' }}>
                   WHERE THAT LANDS
                 </Text>
                 <BandMeter share={result.shareOfGrossIncome} />
-                <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: '#243449' }} />
-                <Text style={{ color: '#9FB0C6', fontSize: 14, lineHeight: 21 }}>
+                <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: p.heroBorder }} />
+                <Text style={{ color: p.heroMuted, fontSize: 14, lineHeight: 21 }}>
                   On {money(result.grossMonthlyIncome)} a month gross. Change the income, the car, or paste a
                   real listing and this moves with you.
                 </Text>
@@ -327,6 +327,9 @@ function HeroButton({
   primary?: boolean;
   onPress: () => void;
 }) {
+  const p = usePalette();
+  const ink = primary ? '#062017' : p.heroText;
+
   return (
     <Pressable
       onPress={onPress}
@@ -335,17 +338,17 @@ function HeroButton({
         flexDirection: 'row',
         alignItems: 'center',
         gap: spacing.sm,
-        paddingVertical: spacing.md + 2,
+        minHeight: 50,
         paddingHorizontal: spacing.xl,
         borderRadius: radius.pill,
-        backgroundColor: primary ? '#5FD69A' : 'transparent',
+        backgroundColor: primary ? p.pass : pressed ? 'rgba(233,240,248,0.08)' : 'transparent',
         borderWidth: primary ? 0 : 1,
-        borderColor: '#2E4A6E',
-        opacity: pressed ? 0.8 : 1,
+        borderColor: p.heroBorder,
+        opacity: pressed && primary ? 0.9 : 1,
       })}
     >
-      <Ionicons name={icon} size={17} color={primary ? '#062017' : '#EAF0F8'} />
-      <Text style={{ color: primary ? '#062017' : '#EAF0F8', fontSize: 15, fontWeight: '700' }}>{label}</Text>
+      <Ionicons name={icon} size={17} color={ink} />
+      <Text style={{ color: ink, fontSize: 15, fontWeight: '700' }}>{label}</Text>
     </Pressable>
   );
 }
@@ -392,19 +395,26 @@ function FadeIn({
   delay?: number;
   style?: object;
 }) {
-  const [progress] = useState(() => new Animated.Value(0));
+  const reduced = useReducedMotion();
+  const [progress] = useState(() => new Animated.Value(reduced ? 1 : 0));
 
   useEffect(() => {
+    // Reduced motion gets the finished state immediately — the content is
+    // never gated behind a transition that may not run.
+    if (reduced) {
+      progress.setValue(1);
+      return;
+    }
     const animation = Animated.timing(progress, {
       toValue: 1,
-      duration: 620,
+      duration: motion.slow,
       delay,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     });
     animation.start();
     return () => animation.stop();
-  }, [delay, progress]);
+  }, [delay, progress, reduced]);
 
   return (
     <Animated.View

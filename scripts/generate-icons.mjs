@@ -17,9 +17,9 @@ import { fileURLToPath } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const ASSETS = join(ROOT, 'assets');
 
-const NAVY = [0x0b, 0x1f, 0x3a];
-const TRACK = [0x2e, 0x4a, 0x6e];
-const ACCENT = [0x5f, 0xd6, 0x9a];
+const NAVY = [0x08, 0x0e, 0x18]; // matches theme heroBackground
+const TRACK = [0x26, 0x34, 0x4a]; // matches theme heroBorder
+const ACCENT = [0x4f, 0xd0, 0x8e]; // matches theme pass (dark)
 const WHITE = [0xff, 0xff, 0xff];
 
 /** Fraction of the ring drawn in the accent colour — the OYC 15% rule. */

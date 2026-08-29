@@ -13,7 +13,7 @@ import {
   SOURCES,
   TDSR_CAP,
 } from '../../src/data/sg-2026-08';
-import { Card, Divider, LinkRow, Note, Row, Screen, ScreenTitle } from '../../src/ui/components';
+import { Card, Divider, LinkRow, Note, Row, Screen, ScreenTitle, Section } from '../../src/ui/components';
 import { money, percent } from '../../src/ui/format';
 import { font, spacing, usePalette } from '../../src/ui/theme';
 
@@ -32,6 +32,7 @@ export default function LearnScreen() {
         body="You are not mainly buying a car. You are buying a Certificate of Entitlement that lets you keep one for ten years, plus an Additional Registration Fee that can exceed the value of the vehicle. Together they usually cost several times the car itself, and neither is negotiable."
       />
 
+      <Section title="What you pay the state" subtitle="The part of the price that is not the car.">
       <Card>
         <Text style={[font.heading, { color: p.text }]}>COE — {DATA_AS_OF}</Text>
         <Row label="Category A (up to 1,600cc / 97kW)" value={money(COE.catA)} />
@@ -73,7 +74,9 @@ export default function LearnScreen() {
           />
         ))}
       </Card>
+      </Section>
 
+      <Section title="What you pay the bank" subtitle="And why a flat rate is not what it looks like.">
       <Card>
         <Text style={[font.heading, { color: p.text }]}>Loan rules</Text>
         <Row label={`OMV up to ${money(LOAN_RULES.lowOmvThreshold)}`} value={`${percent(LOAN_RULES.maxLtvLowOmv)} loan`} />
@@ -89,7 +92,9 @@ export default function LearnScreen() {
           on the falling balance. A flat rate is roughly half of what it really costs you.
         </Note>
       </Card>
+      </Section>
 
+      <Section title="What you get back, and what you keep paying">
       <Card>
         <Text style={[font.heading, { color: p.text }]}>PARF rebate schedules</Text>
         {Object.values(PARF_SCHEDULES).map((schedule) => (
@@ -120,6 +125,7 @@ export default function LearnScreen() {
           for yours.
         </Text>
       </Card>
+      </Section>
 
       <Explainer
         title="The OYC rule"

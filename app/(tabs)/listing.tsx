@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   Easing,
   Linking,
@@ -23,10 +22,12 @@ import {
   Button,
   Card,
   Divider,
+  EmptyState,
   Note,
   Row,
   Screen,
   ScreenTitle,
+  Skeleton,
 } from '../../src/ui/components';
 import { money, moneyPrecise, percent } from '../../src/ui/format';
 import { font, radius, spacing, usePalette } from '../../src/ui/theme';
@@ -133,7 +134,9 @@ export default function ListingScreen() {
 
         <Button
           label={loading ? 'Reading the listing…' : 'Check this car'}
-          icon={loading ? undefined : 'search'}
+          icon="search"
+          loading={loading}
+          disabled={url.trim().length === 0}
           onPress={() => check(url)}
         />
         <Pressable onPress={() => setUrl(EXAMPLE)} accessibilityRole="button">
@@ -149,12 +152,17 @@ export default function ListingScreen() {
       </Card>
 
       {loading ? (
-        <Card>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.md }}>
-            <ActivityIndicator color={p.accent} />
-            <Text style={[font.body, { color: p.textMuted }]}>Fetching and reading the listing…</Text>
-          </View>
-        </Card>
+        <>
+          <Card>
+            <Skeleton width="35%" height={12} />
+            <Skeleton width="60%" height={34} />
+            <Skeleton width="80%" height={14} />
+          </Card>
+          <Card>
+            <Skeleton height={220} />
+            <Skeleton width="55%" height={18} style={{ alignSelf: 'center' }} />
+          </Card>
+        </>
       ) : null}
 
       {error ? (
@@ -186,21 +194,11 @@ export default function ListingScreen() {
                 }
               />
             ) : (
-              <View
-                style={{
-                  height: 140,
-                  borderRadius: radius.lg,
-                  backgroundColor: p.surfaceAlt,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: spacing.sm,
-                }}
-              >
-                <Ionicons name="image-outline" size={22} color={p.textFaint} />
-                <Text style={[font.caption, { color: p.textFaint }]}>
-                  This listing has no photographs.
-                </Text>
-              </View>
+              <EmptyState
+                icon="image-outline"
+                title="No photographs on this listing"
+                body="The numbers below still hold — only the pictures are missing."
+              />
             )}
             <Text style={[font.title, { color: p.text, textAlign: 'center' }]}>
               {listing.title ?? 'This car'}
@@ -281,10 +279,14 @@ export default function ListingScreen() {
       ) : null}
 
       {!listing && !loading && !error ? (
-        <Note>
-          OYC fetches the page through its own server, because listing sites block browsers from reading them
-          directly. Nothing you paste is stored.
-        </Note>
+        <Card>
+          <EmptyState
+            icon="car-sport-outline"
+            title="Paste a link to begin"
+            body="OYC reads the asking price, OMV, ARF, COE and road tax off the page, then judges the total against your income. Nothing you paste is stored."
+            action={<Button label="Try the example" variant="ghost" icon="flash-outline" onPress={() => check(EXAMPLE)} />}
+          />
+        </Card>
       ) : null}
     </Screen>
   );

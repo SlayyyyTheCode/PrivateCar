@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "OYC — Own Your Car",
+    "name": "OYC \u2014 Own Your Car",
     "slug": "oyc-own-your-car",
     "scheme": "oyc",
     "version": "1.0.0",
@@ -19,7 +19,7 @@
       "package": "sg.oyc.app",
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
-        "backgroundColor": "#0B1F3A",
+        "backgroundColor": "#080E18",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -39,9 +39,9 @@
           "image": "./assets/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#0B1F3A",
+          "backgroundColor": "#080E18",
           "dark": {
-            "backgroundColor": "#0A1220"
+            "backgroundColor": "#080E18"
           }
         }
       ]

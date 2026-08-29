@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo } from 'react';
-import { Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { evaluateScenario } from '../../src/core/verdict';
 import type { RuleResult } from '../../src/core/types';
 import { useScenario } from '../../src/state/useScenario';
@@ -12,6 +12,7 @@ import {
   Row,
   Screen,
   ScreenTitle,
+  Section,
   StatusPill,
   statusColors,
 } from '../../src/ui/components';
@@ -35,32 +36,48 @@ export default function VerdictScreen() {
     <Screen>
       <ScreenTitle title="Verdict" subtitle={scenario.name} />
 
-      <Card style={{ backgroundColor: c.bg, borderColor: c.bg }}>
-        <Text style={{ color: c.fg, fontSize: 30, fontWeight: '800', letterSpacing: -0.8 }}>
+      <View
+        style={{
+          backgroundColor: c.bg,
+          borderRadius: radius.xl,
+          padding: spacing.xl,
+          gap: spacing.md,
+        }}
+      >
+        <Text style={{ color: c.fg, fontSize: 34, fontWeight: '800', letterSpacing: -1 }}>
           {result.band.label}
         </Text>
-        <Text style={[font.body, { color: c.fg }]}>{HEADLINE[result.status]}</Text>
-        <Text style={[font.display, { color: p.text }]}>{moneyPrecise(result.totalMonthlyCarCost)}</Text>
-        <Text style={[font.body, { color: p.textMuted }]}>
-          every month, all in — {percent(result.shareOfGrossIncome)} of your gross income and{' '}
-          {percent(result.shareOfTakeHome)} of your take-home pay.
-        </Text>
-        <Divider />
-        <BandMeter share={result.shareOfGrossIncome} compact />
-        <Divider />
-        <Row label="Loan instalment" value={moneyPrecise(result.loan.monthlyInstalment)} />
-        <Row label="Running costs" value={moneyPrecise(result.running.total)} />
-        <BarBreakdown
-          items={[
-            { label: 'Loan', amount: result.loan.monthlyInstalment },
-            { label: 'Running costs', amount: result.running.total },
-          ]}
-          total={result.totalMonthlyCarCost}
-        />
-      </Card>
+        <Text style={[font.body, { color: p.text }]}>{HEADLINE[result.status]}</Text>
 
-      <Card>
-        <Text style={[font.heading, { color: p.text }]}>What it would take</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: spacing.sm, flexWrap: 'wrap' }}>
+          <Text style={[font.monoLarge, { color: p.text }]}>
+            {moneyPrecise(result.totalMonthlyCarCost)}
+          </Text>
+          <Text style={[font.body, { color: p.textMuted }]}>a month, all in</Text>
+        </View>
+
+        <Text style={[font.caption, { color: p.textMuted }]}>
+          {percent(result.shareOfGrossIncome)} of gross income · {percent(result.shareOfTakeHome)} of take-home
+        </Text>
+
+        <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: c.fg, opacity: 0.25 }} />
+        <BandMeter share={result.shareOfGrossIncome} compact />
+
+        <View style={{ gap: spacing.sm, marginTop: spacing.xs }}>
+          <Row label="Loan instalment" value={moneyPrecise(result.loan.monthlyInstalment)} />
+          <Row label="Running costs" value={moneyPrecise(result.running.total)} />
+          <BarBreakdown
+            items={[
+              { label: 'Loan', amount: result.loan.monthlyInstalment },
+              { label: 'Running costs', amount: result.running.total },
+            ]}
+            total={result.totalMonthlyCarCost}
+          />
+        </View>
+      </View>
+
+      <Section title="What it would take">
+        <Card>
         <Row
           label="Gross income for this to be affordable (20%)"
           value={money(result.requiredGrossMonthlyIncome)}
@@ -81,7 +98,8 @@ export default function VerdictScreen() {
         {result.upfront.lines.map((line) => (
           <Row key={line.label} label={line.label} value={money(line.amount)} />
         ))}
-      </Card>
+        </Card>
+      </Section>
 
       <TdsrCard
         ratio={result.tdsr.ratio}
@@ -90,9 +108,11 @@ export default function VerdictScreen() {
         note={result.tdsr.note}
       />
 
-      {result.rules.map((rule) => (
-        <RuleCard key={rule.id} rule={rule} />
-      ))}
+      <Section title="Against the rules" subtitle="The American rule of thumb, and the one OYC recommends here.">
+        {result.rules.map((rule) => (
+          <RuleCard key={rule.id} rule={rule} />
+        ))}
+      </Section>
 
       <Card>
         <Text style={[font.heading, { color: p.text }]}>Why 20-4-10 does not survive the trip here</Text>
