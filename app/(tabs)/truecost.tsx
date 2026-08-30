@@ -7,10 +7,12 @@ import {
   BarBreakdown,
   Card,
   Divider,
+  Group,
   Note,
   Row,
   Screen,
   ScreenTitle,
+  Section,
   Stepper,
 } from '../../src/ui/components';
 import { money, moneyPrecise } from '../../src/ui/format';
@@ -32,23 +34,21 @@ export default function TrueCostScreen() {
         subtitle="Everything you will pay, minus everything you get back when you deregister."
       />
 
-      <Card>
-        <Stepper
-          label="How long will you keep it?"
-          hint={`Capped at the ${(scenario.car.coeMonthsRemaining / 12).toFixed(1)} years of COE left on this car.`}
-          value={holdingYears}
-          onChange={setHoldingYears}
-          min={1}
-          max={10}
-          format={(v) => `${v} year${v === 1 ? '' : 's'}`}
-        />
-      </Card>
+      <Stepper
+        label="How long will you keep it?"
+        hint={`Capped at the ${(scenario.car.coeMonthsRemaining / 12).toFixed(1)} years of COE left on this car.`}
+        value={holdingYears}
+        onChange={setHoldingYears}
+        min={1}
+        max={10}
+        format={(v) => `${v} year${v === 1 ? '' : 's'}`}
+      />
 
-      <Card>
+      <Card raised>
         <Text style={[font.label, { color: p.textMuted }]}>
           Net cost over {(tco.holdingMonths / 12).toFixed(1)} years
         </Text>
-        <Text style={[font.display, { color: p.text }]}>{money(tco.netCost)}</Text>
+        <Text style={[font.monoLarge, { color: p.text, fontSize: 38 }]}>{money(tco.netCost)}</Text>
         <Text style={[font.body, { color: p.textMuted }]}>
           That is {moneyPrecise(tco.effectiveMonthlyCost)} a month of your life, for a car with a sticker price
           of {money(tco.carPrice)}.
@@ -61,23 +61,33 @@ export default function TrueCostScreen() {
         </Text>
       </Card>
 
-      <Card>
-        <Text style={[font.heading, { color: p.text }]}>Money out</Text>
-        {tco.outflows.map((line) => (
-          <Row key={line.label} label={line.label} value={money(line.amount)} />
-        ))}
-        <Divider />
-        <Row label="Total paid out" value={money(tco.grossOutlay)} emphasis />
-        <BarBreakdown items={tco.outflows} total={tco.grossOutlay} />
-      </Card>
+      <Section title="The accounting" subtitle="What leaves your account, and what comes back at the end.">
+        <Group title="Money out">
+          {[
+            ...tco.outflows.map((line) => (
+              <Row key={line.label} label={line.label} value={money(line.amount)} />
+            )),
+            <Row key="total" label="Total paid out" value={money(tco.grossOutlay)} emphasis />,
+            <BarBreakdown key="bar" items={tco.outflows} total={tco.grossOutlay} />,
+          ]}
+        </Group>
 
-      <Card>
-        <Text style={[font.heading, { color: p.text }]}>Money back on deregistration</Text>
-        <Row label={`PARF rebate (${schedule.label})`} value={money(tco.parfRebate)} tone="pass" />
-        <Row label="COE rebate on unused months" value={money(tco.coeRebate)} tone="pass" />
-        <Divider />
-        <Row label="Total rebate" value={money(tco.totalRebate)} emphasis tone="pass" />
-        <Text style={[font.caption, { color: p.textMuted, lineHeight: 17 }]}>{schedule.description}</Text>
+        <Group title="Money back on deregistration">
+          {[
+            <Row
+              key="parf"
+              label={`PARF rebate (${schedule.label})`}
+              value={money(tco.parfRebate)}
+              tone="pass"
+            />,
+            <Row key="coe" label="COE rebate on unused months" value={money(tco.coeRebate)} tone="pass" />,
+            <Row key="total" label="Total rebate" value={money(tco.totalRebate)} emphasis tone="pass" />,
+            <Text key="note" style={[font.caption, { color: p.textMuted }]}>
+              {schedule.description}
+            </Text>,
+          ]}
+        </Group>
+
         {scenario.car.parfScheme === 'from2026' && tco.holdingMonths >= 108 ? (
           <Note tone="warn">
             Holding to the end of the COE under the Budget 2026 schedule returns only 5% of your ARF — about{' '}
@@ -85,10 +95,10 @@ export default function TrueCostScreen() {
             depreciation.
           </Note>
         ) : null}
-      </Card>
+      </Section>
 
+      <Section title="What you are actually buying">
       <Card>
-        <Text style={[font.heading, { color: p.text }]}>What you are actually buying</Text>
         <Row label="Open Market Value — the car itself" value={money(scenario.car.omv)} />
         <Row label="Additional Registration Fee" value={money(tco.arf)} />
         <Row label="COE" value={money(scenario.car.coe)} />
@@ -107,6 +117,7 @@ export default function TrueCostScreen() {
           amount of haggling changes.
         </Note>
       </Card>
+      </Section>
     </Screen>
   );
 }

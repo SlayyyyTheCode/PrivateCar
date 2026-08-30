@@ -57,7 +57,7 @@ npm start          # scan the QR code with Expo Go
 | Command | What it does |
 |---|---|
 | `npm start` | Dev server — runs in Expo Go, no native build needed |
-| `npm test` | Calculation engine test suite (121 tests) |
+| `npm test` | Calculation engine test suite (146 tests) |
 | `npm run typecheck` | TypeScript, no emit |
 | `npm run lint` | ESLint |
 | `npm run icons` | Regenerate app icons from `scripts/generate-icons.mjs` |
@@ -70,16 +70,20 @@ app/
   (tabs)/listing.tsx      Paste a link, flash the verdict
   (tabs)/calculator.tsx   Income, car, loan, monthly expenses
   (tabs)/verdict.tsx      20-4-10 vs the OYC rule, TDSR, cash needed
+  (tabs)/trends.tsx       COE, pump prices and parking over time
   (tabs)/truecost.tsx     Ten-year cost of ownership, rebates, depreciation
   (tabs)/learn.tsx        Every constant, explained, with sources
-api/listing.ts            Stateless edge function that fetches a listing
+api/listing.ts            Edge function that fetches and parses a listing
+api/coe-history.ts        Edge function that proxies LTA's COE dataset
 src/core/                 Pure TypeScript engine — no React Native imports
   bands.ts                The four-word verdict scale
   listing.ts              Listing parser (pure; shared with the API route)
+  history.ts              Time-series bucketing, ranges, extents
   arf / roadTax / cpf / loan / price / running / verdict / tco
 src/data/sg-2026-08.ts    Versioned Singapore constants, all user-editable
-src/state/                Zustand store (AsyncStorage) and the listing client
-src/ui/                   Tokens, components, band meter, photo spinner
+src/data/history.ts       Historical series and typical market rates
+src/state/                Zustand store (AsyncStorage) and the API clients
+src/ui/                   Tokens, components, charts, photo spinner
 __tests__/core/           The calculation contract
 __tests__/fixtures/       A real captured listing page, pinning the parser
 ```
@@ -107,11 +111,26 @@ Reconstructing real geometry from the photographs is not possible either. It is 
 
 A listing page advertises only one or two images in its payload, but the CDN holds the full set under a predictable name. [`galleryCandidates`](src/core/listing.ts) derives it and the API confirms which exist with one round of parallel HEAD requests — nine frames for the reference listing, from a single advertised thumbnail.
 
+## Design
+
+[`DESIGN.md`](DESIGN.md) documents the visual system and [`PRODUCT.md`](PRODUCT.md) the strategy behind it. Two rules matter most:
+
+- **Every text colour is verified at ≥4.5:1 against every surface it can land on**, including its own pill background. An earlier build shipped a caption colour at 3.1:1 that carried every hint and source note in the app.
+- **Cards are not the default.** `Section` (a heading over open space) and `Group` (rows sharing one surface) carry the structure; cards are reserved for content that genuinely sits apart.
+
+## Trends
+
+The Trends tab plots what ownership costs have actually done, over 1, 3, 5 and 10-year windows plus all-time, at day, month or year granularity. Ranges anchor on the latest data point rather than on today, so the view does not drift depending on when it is opened.
+
+COE is **live** — every bidding exercise since 2010, from LTA via data.gov.sg. Its points are labelled by exercise (`Aug 2026 · 2nd exercise`) rather than by a closing day, because the dataset gives the month and round but never the date; the label is dropped as soon as two rounds are averaged.
+
+Pump prices are a **dated snapshot** across Esso, Shell, SPC, Caltex and Sinopec, cross-checked against two sources. Not live, and the screen says so: both comparison sites build their tables in the browser, so a server has nothing to read. Every card is badged Official or Indicative.
+
 ## Data
 
 All figures are **defaults gathered in August 2026**, and every one is editable in the app. The Learn tab shows the vintage and links the source for each.
 
-- COE Cat A $123,890 · Cat B $129,910 (Aug 2026, first bidding)
+- COE Cat A $128,501 · Cat B $131,001 (Aug 2026, second bidding, 19 Aug)
 - ARF marginal tiers 100 / 140 / 190 / 250 / 320%
 - Road tax bands with the 0.782 rebate factor
 - PARF: 30%→5% capped at $30,000 from Feb 2026; 75%→50% capped at $60,000 for Feb 2023 – Jan 2026
